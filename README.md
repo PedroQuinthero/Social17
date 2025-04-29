@@ -13,7 +13,7 @@ manage a friend list
 
 The project demonstrates how modern social‑media back‑ends structure and manipulate large amounts of unstructured data.
 
-Walk‑through video: see it in action—from server start‑up through CRUD requests and cascade deletes. https://your-demo-video-link.com
+Walk‑through video: see it in action—from server start‑up through CRUD requests and cascade deletes. [https://your-demo-video-link.com](https://drive.google.com/file/d/14WN2R0ioLSbUofZz01sC76tAMLZeaaB0/view)
 
 Table of Contents
 
