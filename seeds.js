@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { User, Thought } = require('./models');
 
-mongoose.connect('mongodb://127.0.0.1:27017/vibelinkDB', {
+mongoose.connect('mongodb://127.0.0.1:27017/social17DB', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
