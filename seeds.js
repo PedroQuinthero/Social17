@@ -8,56 +8,59 @@ mongoose.connect('mongodb://127.0.0.1:27017/social17DB', {
 
 const users = [
   { username: 'jonatan', email: 'jonatan@email.com' },
-  { username: 'alex', email: 'alex@example.com' },
-  { username: 'emma', email: 'emma@example.com' }
+  { username: 'alex',    email: 'alex@example.com'  },
+  { username: 'emma',    email: 'emma@example.com'  },
 ];
 
 async function seed() {
   try {
-    // Remove existing data
-    await User.deleteMany({});
-    await Thought.deleteMany({});
-    
-    // Insert Users
-    const insertedUsers = await User.insertMany(users);
-    console.log('Seeded Users:');
-    insertedUsers.forEach(user => {
-      console.log(`Username: ${user.username}, ID: ${user._id}`);
-    });
-    
-    // Find jonathan's user document
-    const jonatan = insertedUsers.find(user => user.username === 'jonatan');
-    if (!jonatan) throw new Error('Jonatan not found');
+    /* 1. Clear existing data */
+    await Promise.all([User.deleteMany({}), Thought.deleteMany({})]);
 
-    // Create a thought for Jonatan with a reaction
-    const thoughtData = {
-      thoughtText: "What is this all about!?",
-      username: "jonatan",
-      reactions: [
-        {
-          reactionBody: "I am so lost too!",
-          username: "alex"
-        }
-      ]
-    };
-    const createdThought = await Thought.create(thoughtData);
-    
-    // Update jonatan to add this thought to his thoughts array
-    await User.findByIdAndUpdate(
-      jonatan._id,
-      { $push: { thoughts: createdThought._id } },
-      { new: true }
-    );
-    
-    console.log(`Seeded Thought for jonatan: ID: ${createdThought._id}`);
-    if (createdThought.reactions && createdThought.reactions.length > 0) {
-      createdThought.reactions.forEach((reaction, index) => {
-        console.log(`Seeded Reaction ${index + 1} for thought ${createdThought._id}: ID: ${reaction.reactionId}`);
+    /* 2. Insert users */
+    const insertedUsers = await User.insertMany(users);
+    console.log('\n📦  Users seeded:');
+    insertedUsers.forEach(u => console.log(`   – ${u.username} (${u._id})`));
+
+    /* 3. Build two thoughts for every user */
+    const thoughtOps = insertedUsers.flatMap(user => {
+      const otherUsers = insertedUsers.filter(u => u.username !== user.username);
+
+      return [1, 2].map(i => {
+        // pick a random other user to react
+        const reactor = otherUsers[Math.floor(Math.random() * otherUsers.length)];
+
+        const thoughtDoc = {
+          thoughtText: `${user.username}'s thought #${i}`,
+          username: user.username,
+          reactions: [
+            {
+              reactionBody: `Reply to ${user.username}'s thought #${i}`,
+              username: reactor.username,
+            },
+          ],
+        };
+
+        /* create thought, then attach it to the author */
+        return Thought.create(thoughtDoc).then(async created => {
+          await User.findByIdAndUpdate(
+            user._id,
+            { $push: { thoughts: created._id } },
+            { new: true },
+          );
+
+          console.log(
+            `   • Thought ${created._id} for ${user.username} (reaction by ${reactor.username})`,
+          );
+        });
       });
-    }
-    
+    });
+
+    /* 4. Execute all creates/updates */
+    await Promise.all(thoughtOps);
+    console.log('\n✅  Database seeding finished.\n');
   } catch (err) {
-    console.error(err);
+    console.error('❌  Seed error:', err);
   } finally {
     mongoose.connection.close();
   }
